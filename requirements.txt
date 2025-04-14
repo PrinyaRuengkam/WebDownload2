@@ -1,3 +1,2 @@
 Flask
 yt-dlp
-imageio[ffmpeg]
