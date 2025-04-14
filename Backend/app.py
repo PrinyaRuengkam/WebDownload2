@@ -18,7 +18,7 @@ def download_video():
     url = data['url']
     format_choice = data['format']
     threading.Thread(target=download_thread, args=(url, format_choice)).start()
-    return '', 204
+    return jsonify({'message': 'Download started'}), 202
 
 def download_thread(url, format_choice):
     global download_status
@@ -39,12 +39,6 @@ def download_thread(url, format_choice):
             'preferredcodec': 'mp3',
             'preferredquality': '0'
         })
-    else:
-        ydl_opts['postprocessors'].append({
-            'key': 'FFmpegVideoConvertor',
-            'preferedformat': 'mp4'
-        })
-        ydl_opts['merge_output_format'] = 'mp4'  # บังคับให้รวมไฟล์เป็น MP4
 
     try:
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
