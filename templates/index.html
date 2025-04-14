@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>YouTube Downloader</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <style>
+        .file-list {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        .file-list ul {
+            list-style-type: none;
+            padding: 0;
+        }
+
+        .file-list li {
+            margin: 5px 0;
+        }
+
+        .file-list a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+        .file-list a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>YouTube Downloader</h1>
+        <input type="text" id="url" placeholder="Enter YouTube URL">
+        <select id="format">
+            <option value="mp4">MP4 (Video)</option>
+            <option value="mp3">MP3 (Audio)</option>
+        </select>
+        <button onclick="startDownload()">Download</button>
+        <div class="progress-container">
+            <div id="progress-bar"></div>
+        </div>
+        <p id="status">Waiting...</p>
+        <a id="download-link" href="#" style="display: none;" download>Download File</a>
+        <div class="file-list">
+            <h2>Downloaded Files</h2>
+            <ul id="file-list"></ul>
+        </div>
+    </div>
+    <script>
+        function startDownload() {
+            const url = document.getElementById('url').value;
+            const format = document.getElementById('format').value;
+            document.getElementById('status').textContent = 'Starting...';
+            document.getElementById('download-link').style.display = 'none';
+
+            fetch('/download', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({url, format})
+            });
+
+            const interval = setInterval(() => {
+                fetch('/progress')
+                    .then(res => res.json())
+                    .then(data => {
+                        document.getElementById('status').textContent = data.status;
+                        document.getElementById('progress-bar').style.width = data.percent + '%';
+
+                        if (data.status === 'Done!') {
+                            clearInterval(interval);
+                            document.getElementById('download-link').href = '/download_file/' + data.filename;
+                            document.getElementById('download-link').style.display = 'inline';
+                        }
+                    });
+            }, 1000);
+        }
+
+        function loadFileList() {
+            fetch('/list_files')
+                .then(res => res.json())
+                .then(files => {
+                    const fileList = document.getElementById('file-list');
+                    fileList.innerHTML = ''; // ล้างรายการเก่า
+                    files.forEach(file => {
+                        const li = document.createElement('li');
+                        const link = document.createElement('a');
+                        link.href = '/download_file/' + file;
+                        link.textContent = file;
+                        link.download = file;
+                        li.appendChild(link);
+                        fileList.appendChild(li);
+                    });
+                });
+        }
+
+        // เรียกใช้ฟังก์ชันเมื่อโหลดหน้าเว็บ
+        window.onload = loadFileList;
+    </script>
+    <script>
+        try {
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                info_dict = ydl.extract_info(url, download=True)
+                filename = ydl.prepare_filename(info_dict)
+                console.log(`Downloaded file: ${filename}`);  // ตรวจสอบชื่อไฟล์
+                if (format_choice === 'mp3') {
+                    filename = filename.split('.').slice(0, -1).join('.') + '.mp3';
+                } else {
+                    filename = filename.split('.').slice(0, -1).join('.') + '.mp4';
+                }
+                download_status['status'] = 'Done!';
+                download_status['filename'] = filename.split('/').pop();
+                download_status['percent'] = 100;
+        } catch (e) {
+            download_status['status'] = `Error: ${e.message}`;
+            console.log(`Error: ${e.message}`);  // แสดงข้อผิดพลาด
+        }
+    </script>
+</body>
+</html>
