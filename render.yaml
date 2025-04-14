@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: youtube-downloader
+    env: python
+    plan: free  # ใช้แผนฟรี (หรือเปลี่ยนเป็น paid หากต้องการ)
+    buildCommand: ""
+    startCommand: python app.py
+    envVars:
+      - key: FLASK_ENV
+        value: production
